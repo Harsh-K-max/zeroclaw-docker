@@ -580,7 +580,7 @@ run_docker_bootstrap() {
 
   if [[ "$SKIP_BUILD" == false ]]; then
     info "Building Docker image ($docker_image)"
-    docker build --target release -t "$docker_image" "$WORK_DIR"
+    docker build --target release -t "$docker_image" .
   else
     info "Skipping Docker image build"
   fi
@@ -615,8 +615,14 @@ MSG
     fi
   fi
 
-  docker run --rm -it \
-    --user "$(id -u):$(id -g)" \
+  local user_flag=()
+  if [[ "$OS_NAME" == "Linux" ]]; then
+    user_flag=(--user "$(id -u):$(id -g)")
+  fi
+
+  # Use MSYS_NO_PATHCONV=1 for the run command to prevent Git Bash from mangling /zeroclaw-data paths
+  MSYS_NO_PATHCONV=1 docker run --rm -it \
+    "${user_flag[@]}" \
     -e HOME=/zeroclaw-data \
     -e ZEROCLAW_WORKSPACE=/zeroclaw-data/workspace \
     -v "$docker_data_dir/.zeroclaw:/zeroclaw-data/.zeroclaw" \
